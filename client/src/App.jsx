@@ -95,8 +95,11 @@ function App() {
     const res = await fetch(URL + fileName, {
       method: "PATCH",
       headers: {
-        rename: reName,
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify({
+        newFileName: reName,
+      }),
     })
     const data = await res.text()
 
