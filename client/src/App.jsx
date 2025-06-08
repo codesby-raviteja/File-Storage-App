@@ -12,13 +12,14 @@ function App() {
     getFiles()
   }, [])
 
-  const getFiles = async () => {
-    const res = await fetch(URL)
+  const getFiles = async (path = "") => {
+    const res = await fetch(URL + path)
     const data = await res.json()
     const reNameObj = {}
     data.forEach((file) => (reNameObj[file] = false))
     setRenameSet(reNameObj)
     setFiles(data)
+    console.log(data)
   }
 
   const handleUpload = async (e) => {
@@ -118,13 +119,29 @@ function App() {
         {files &&
           files.map((file) => {
             return (
-              <p key={file}>
-                FileName: <span>{file}</span>{" "}
-                <a href={URL + `preview/${file}`}>Open</a>{" "}
-                {file.includes(".") ? (
-                  <a href={URL + `download/${file}`}>Download</a>
+              <p key={file.name}>
+                FileName: <span>{file.name}</span>{" "}
+                {file.name.includes(".") ? (
+                  <>
+                    <a
+                      href={
+                        URL + `preview/${file.name}?path=${file.path}`
+                      }
+                    >
+                      Open
+                    </a>{" "}
+                    <a
+                      href={URL + `download/${file.name}?path=${file.path}`}
+                    >
+                      Download
+                    </a>
+                  </>
                 ) : (
-                  "  "
+                  <button
+                    onClick={() => getFiles(`${file.name}?path=${file.path}`)}
+                  >
+                    Open
+                  </button>
                 )}{" "}
                 {"      "}
                 <button onClick={() => handleDelete(file)}>Delete</button>
