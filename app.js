@@ -1,6 +1,8 @@
 import express from "express"
 import fs from "fs/promises"
 import cors from "cors"
+import mime from "mime-types"
+import { statSync } from "fs"
 
 const app = express()
 
@@ -8,49 +10,55 @@ app.use(express.json())
 
 app.use(cors({ origin: "http://localhost:5173" }))
 
-app.get("/", async (req, res) => {
-  console.log("Hellow", req.originalUrl)
+app.get("/directory/*", async (req, res) => {
   //Create a storage folder add files in it
-  const files = await fs.readdir("./storage", { withFileTypes: true })
-  console.log(files)
-  res.status(200).json(files)
-})
-
-app.get("/:file", async (req, res) => {
   try {
-    const { file } = req.params
-    const { path } = req.query
-
-    if (!path) {
-      return res.send("favicon")
+    const { 0: dirpath } = req.params
+    const path = !dirpath ? "./storage" : `./storage/${dirpath}`
+    const files = await fs.readdir(path)
+    const data = []
+    for (const file of files) {
+      const filePath = !dirpath
+        ? `./storage/${file}`
+        : `./storage/${dirpath}/${file}`
+      const fileStats = await fs.stat(filePath)
+      const isDirectory = fileStats.isDirectory()
+      data.push({ fileName: file, isDirectory })
     }
-
-    const dirPath = path + `/${file}`
-    const files = await fs.readdir(dirPath, { withFileTypes: true })
-    console.log(files)
-    res.status(200).json(files)
+    res.status(200).json(data)
   } catch (error) {
-    console.log("THIS IS THE ERROR:", error.message)
+    console.log(error.message)
   }
 })
 
-app.get("/:mode/:fileName", (req, res) => {
+app.get("/files/:fileName", async (req, res) => {
   try {
-    const { mode, fileName } = req.params
-    const { path } = req.query
-    if (mode === "download") {
+    const { fileName } = req.params
+    const { action, path } = req.query
+    const newPath =
+      path === "directory"
+        ? `/storage/${fileName}`
+        : `/storage/${path}/${fileName}`
+    if (action === "download") {
       res.setHeader("Content-Disposition", `attachment`)
     }
-    res.sendFile(import.meta.dirname + path.substring(1) + `/${fileName}`)
+
+    res.sendFile(import.meta.dirname + newPath)
   } catch (error) {
     console.log(error)
     res.status(501).send(error)
   }
 })
 
-app.post("/", async (req, res) => {
+app.post("/upload/*", async (req, res) => {
   try {
-    const fileHandle = await fs.open(`./storage/${req.headers.filename}`, "w+")
+    const fileName = req.headers.filename
+    const { 0: dirpath } = req.params
+    const destinationPath = !dirpath
+      ? `./storage/${fileName}`
+      : `./storage/${dirpath}/${fileName}`
+
+    const fileHandle = await fs.open(destinationPath, "w+")
     const writeStream = fileHandle.createWriteStream()
     req.pipe(writeStream)
     writeStream.on("close", () => {
@@ -64,18 +72,24 @@ app.post("/", async (req, res) => {
 
 app.patch("/:file", async (req, res) => {
   const { file } = req.params
-  const oldPath = import.meta.dirname + `/storage/${file}`
-  const newPath = import.meta.dirname + `/storage/${req.body.newFileName}`
-  const result = await fs.rename(oldPath, newPath)
-
+  const { newFileName, path } = req.body
+  const filePath = !path ? `/storage/` : `/storage/${path}/`
+  const oldFilePath = import.meta.dirname + filePath + file
+  const newFilePath = import.meta.dirname + filePath + newFileName
+  const result = await fs.rename(oldFilePath, newFilePath)
   res.send("file renamed successfully")
 })
 
 app.delete("/:file", async (req, res) => {
-  const { file } = req.params
-  const path = import.meta.dirname + `/storage/${file}`
-  const result = await fs.rm(path)
-  res.send("file deleted successfully")
+  try {
+    const { file } = req.params
+    const { path } = req.body
+    const filePath = !path ? `/storage/${file}` : `/storage/${path}/${file}`
+    const rootPath = import.meta.dirname + filePath
+    const result = await fs.rm(rootPath, { recursive: true })
+    res.send("file deleted successfully")
+  } catch (error) {
+    res.status(501).send("failed to delete ")  }
 })
 
 app.listen(5000, () => {
