@@ -11,8 +11,9 @@ function DirectoryView() {
   const [indicator, setIndicator] = useState()
   const [reName, setRename] = useState("")
   const [renameSet, setRenameSet] = useState({})
+  const [newDirectoryName, setNewDirectoryName] = useState("")
   useEffect(() => {
-    getFiles(directory)
+    getFiles()
   }, [directory])
 
   const getFiles = async () => {
@@ -26,7 +27,7 @@ function DirectoryView() {
 
   const handleUpload = async (e) => {
     const file = e.target.files[0]
-    const uploadURL = URL + `/upload/${directory}`
+    const uploadURL = URL + `/files/upload/${directory}`
     const xhr = new XMLHttpRequest()
     xhr.open("POST", uploadURL, true)
     xhr.setRequestHeader("fileName", file.name)
@@ -42,12 +43,8 @@ function DirectoryView() {
   }
 
   const handleDelete = async (filename) => {
-    const res = await fetch(URL + "/" + filename, {
+    const res = await fetch(URL + `/files/${directory}/${filename}`, {
       method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ path: directory }),
     })
     const data = await res.text()
     console.log(data)
@@ -80,14 +77,30 @@ function DirectoryView() {
     getFiles()
     setRename("")
   }
+
+  const handleCreateDirectory = async () => {
+    if (!newDirectoryName) {
+      return alert("Directory Name connot be empty")
+    }
+
+    const res = await fetch(
+      URL + `/directory/${directory}/${newDirectoryName}`,
+      { method: "POST" }
+    )
+    console.log(await res.text())
+    getFiles()
+    setNewDirectoryName("")
+  }
+
   return (
     <>
       <div>
-        <h3>Upload File Down here</h3>
+        <h1>MY FILES</h1>
+        <h2>Upload File Down here</h2>
         <input type="file" onChange={handleUpload} />
         {indicator && <span>Uploaded :{indicator}%</span>}
 
-        <h3>Files On the server</h3>
+        <h2>Files On the server</h2>
         {files &&
           files.map(({ fileName, isDirectory }) => {
             return (
@@ -141,6 +154,16 @@ function DirectoryView() {
               </p>
             )
           })}
+        <h3>Creating Options:</h3>
+        <p>
+          <input
+            type="text"
+            id=""
+            value={newDirectoryName}
+            onChange={(e) => setNewDirectoryName(e.target.value)}
+          />{" "}
+          <button onClick={handleCreateDirectory}>Create Directory</button>
+        </p>
       </div>
     </>
   )

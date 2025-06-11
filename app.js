@@ -3,6 +3,7 @@ import fs from "fs/promises"
 import cors from "cors"
 import mime from "mime-types"
 import { statSync } from "fs"
+import path from "path"
 
 const app = express()
 
@@ -14,8 +15,9 @@ app.get("/directory/*", async (req, res) => {
   //Create a storage folder add files in it
   try {
     const { 0: dirpath } = req.params
-    const path = !dirpath ? "./storage" : `./storage/${dirpath}`
-    const files = await fs.readdir(path)
+    const directoryPath = "./storage" + path.join("/", dirpath)
+
+    const files = await fs.readdir(directoryPath)
     const data = []
     for (const file of files) {
       const filePath = !dirpath
@@ -27,18 +29,27 @@ app.get("/directory/*", async (req, res) => {
     }
     res.status(200).json(data)
   } catch (error) {
-    console.log(error.message)
+    res.status(400).json({ message: "No such file or directory" })
+  }
+})
+
+app.post("/directory/?*", async (req, res) => {
+  try {
+    const directory = path.join("/", req.params[0])
+    const dirPath = `./storage${directory}`
+    const restult = await fs.mkdir(dirPath)
+    res.send("Directory successfully created")
+  } catch (error) {
+    res.status(501).json({ message: error.message })
   }
 })
 
 app.get("/files/:fileName", async (req, res) => {
   try {
     const { fileName } = req.params
-    const { action, path } = req.query
-    const newPath =
-      path === "directory"
-        ? `/storage/${fileName}`
-        : `/storage/${path}/${fileName}`
+    const { action, path: filePath } = req.query
+    const newPath = "/storage" + path.join("/", filePath, fileName)
+
     if (action === "download") {
       res.setHeader("Content-Disposition", `attachment`)
     }
@@ -50,14 +61,12 @@ app.get("/files/:fileName", async (req, res) => {
   }
 })
 
-app.post("/upload/*", async (req, res) => {
+app.post("/files/upload/*", async (req, res) => {
   try {
     const fileName = req.headers.filename
     const { 0: dirpath } = req.params
-    const destinationPath = !dirpath
-      ? `./storage/${fileName}`
-      : `./storage/${dirpath}/${fileName}`
-
+    const destinationPath = "./storage" + path.join("/", dirpath,fileName)
+    console.log(destinationPath);
     const fileHandle = await fs.open(destinationPath, "w+")
     const writeStream = fileHandle.createWriteStream()
     req.pipe(writeStream)
@@ -80,16 +89,16 @@ app.patch("/:file", async (req, res) => {
   res.send("file renamed successfully")
 })
 
-app.delete("/:file", async (req, res) => {
+app.delete("/files/?*", async (req, res) => {
   try {
-    const { file } = req.params
-    const { path } = req.body
-    const filePath = !path ? `/storage/${file}` : `/storage/${path}/${file}`
-    const rootPath = import.meta.dirname + filePath
+    const { 0: dirPath } = req.params
+    const filePath = path.join("/", dirPath)
+    const rootPath = import.meta.dirname + `/storage${filePath}`
     const result = await fs.rm(rootPath, { recursive: true })
     res.send("file deleted successfully")
   } catch (error) {
-    res.status(501).send("failed to delete ")  }
+    res.status(501).send("failed to delete ")
+  }
 })
 
 app.listen(5000, () => {
