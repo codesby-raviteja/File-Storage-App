@@ -1,0 +1,16 @@
+[
+  {
+    "id": "02d53c18-174c-429a-828f-15dfecabac0e",
+    "name": "Raviteja",
+    "password": "Raviteja",
+    "email": "ravi@admin.com",
+    "rootDirId": "7c79215a-ab04-4e0d-b88f-9d99f8173faa"
+  },
+  {
+    "id": "e80a2b28-5756-46eb-8969-5c759d4dc891",
+    "name": "Yellam Saikrishna",
+    "password": "Saikrishna",
+    "email": "saikrishna@gmail.com",
+    "rootDirId": "4b8317cb-d3eb-4c0c-b038-525584d99fa9"
+  }
+]

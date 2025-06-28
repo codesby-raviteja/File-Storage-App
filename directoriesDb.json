@@ -1,0 +1,57 @@
+[
+  {
+    "id": "7c79215a-ab04-4e0d-b88f-9d99f8173faa",
+    "userId": "02d53c18-174c-429a-828f-15dfecabac0e",
+    "name": "root-ravi@admin.com",
+    "parentDir": null,
+    "files": ["f766ac49-2500-48d4-84bb-55c8d219263a"],
+    "folders": [
+      "e6da748d-ff39-41c4-9547-1583f95b36e5",
+      "16de3a61-51db-4982-a3b7-7956ef82ad56"
+    ]
+  },
+  {
+    "id": "e6da748d-ff39-41c4-9547-1583f95b36e5",
+    "dirName": "Video Files",
+    "parentDirId": "7c79215a-ab04-4e0d-b88f-9d99f8173faa",
+    "files": [],
+    "folders": []
+  },
+  {
+    "id": "16de3a61-51db-4982-a3b7-7956ef82ad56",
+    "dirName": "Audio Files",
+    "parentDirId": "7c79215a-ab04-4e0d-b88f-9d99f8173faa",
+    "files": [
+      "3188d9e8-66b3-4c6d-9090-a655a487fc1d",
+      "1dfce086-dc19-468f-be41-7db250a83ddc",
+      "8bd9af1e-a406-4e60-88ab-10cde485a46a"
+    ],
+    "folders": []
+  },
+  {
+    "id": "4b8317cb-d3eb-4c0c-b038-525584d99fa9",
+    "userId": "e80a2b28-5756-46eb-8969-5c759d4dc891",
+    "name": "root-saikrishna@gmail.com",
+    "parentDir": null,
+    "files": [],
+    "folders": ["eceb2802-032a-474c-8bae-30d718a1c378"]
+  },
+  {
+    "id": "5967516f-802e-4fcb-a649-7d6dcbaba7ea",
+    "dirName": "PDF's",
+    "parentDirId": "undefined",
+    "files": [],
+    "folders": []
+  },
+  {
+    "id": "eceb2802-032a-474c-8bae-30d718a1c378",
+    "dirName": "PDF's",
+    "parentDirId": "4b8317cb-d3eb-4c0c-b038-525584d99fa9",
+    "files": [
+      "13dd32bb-b7e5-4874-ac49-d0379b893433",
+      "51ff8644-f80a-44af-9e61-4d8e8160e875"
+    ],
+    "folders": []
+  }
+]
+ 

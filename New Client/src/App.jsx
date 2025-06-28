@@ -4,14 +4,14 @@ import Signup from "./Components/Signup"
 import Login from "./Components/Login"
 import UserContextProvider from "./Context/userContext"
 
-
 const Router = createBrowserRouter([
   {
-    path: "/*",
+    path: "/",
     element: <DirectoryView />,
   },
+
   {
-    path: "/directory/:id",
+    path: "/:id",
     element: <DirectoryView />,
   },
   {

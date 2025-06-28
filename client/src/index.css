@@ -19,13 +19,47 @@ button {
 span {
   background-color: #706e70fd;
   color: #79ec4c;
-  padding: 2px 4px ;
+  padding: 2px 4px;
   border-radius: 5px;
   cursor: pointer;
 }
 
-a{
+a {
   padding: 3px 6px;
   background-color: gray;
   color: rgb(220, 223, 50);
+  margin-inline: 5px;
+}
+
+.pop-up {
+  width: 100%;
+  max-width: 200px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #b6b2b2;
+  padding: 5px 15px;
+  color: white;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background-color: #ccc8c89d;
+  pointer-events: none;
+}
+
+.pop-up input {
+  width: 100%;
+  font-size: 20px;
+}
+
+.buttons {
+  display: flex;
+  justify-content: space-between;
+}
+
+.buttons button {
+  padding: 5px 10px;
 }
