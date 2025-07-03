@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 storage
+Error.txt
 
 # Editor directories and files
 .vscode/*
