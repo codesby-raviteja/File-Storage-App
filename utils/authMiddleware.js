@@ -1,4 +1,4 @@
-import usersData from "../usersDb.json" with {type:"json"}
+import usersData from "../usersDb.json" assert {type:"json"}
 
 const authMiddleware = (req,res,next)=>{
     const {userId} = req.cookies
