@@ -13,7 +13,7 @@ app.use(cookieParser())
 
 
 app.use(cors({
-  origin:'http://localhost:5173',
+  origin:'https://teja-drive-storage.netlify.app',
   credentials:true
 }))
 app.use("/", authRouter)
