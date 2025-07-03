@@ -1,7 +1,7 @@
 import express from "express"
 import fs from "fs/promises"
-import directoriesData from "../directoriesDb.json" assert { type: "json" }
-import filesData from "../filesDb.json" assert { type: "json" }
+import directoriesData from "../directoriesDb.json" with { type: "json" }
+import filesData from "../filesDb.json" with { type: "json" }
 import authMiddleware from "../utils/authMiddleware.js"
 
 const directoryRouter = express.Router()

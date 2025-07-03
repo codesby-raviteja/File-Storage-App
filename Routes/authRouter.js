@@ -1,6 +1,6 @@
 import express from "express"
-import usersData from "../usersDb.json" assert {type:"json"}
-import directoriesData from "../directoriesDb.json" assert {type:"json"}
+import usersData from "../usersDb.json" with {type:"json"}
+import directoriesData from "../directoriesDb.json" with {type:"json"}
 import { writeFile } from "fs/promises"
 import authMiddleware from "../utils/authMiddleware.js"
 
