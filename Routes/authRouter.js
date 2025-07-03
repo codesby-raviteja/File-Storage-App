@@ -1,6 +1,6 @@
 import express from "express"
-import usersData from "../usersDb.json" with {type:"json"}
-import directoriesData from "../directoriesDb.json" with {type:"json"}
+import usersData from "../usersDb.json" with { type: "json" }
+import directoriesData from "../directoriesDb.json" with { type: "json" }
 import { writeFile } from "fs/promises"
 import authMiddleware from "../utils/authMiddleware.js"
 
@@ -51,23 +51,32 @@ authRouter.post("/login", async (req, res) => {
     }
     // const rootDir = directoriesData.find((dir) => dir.userId === userObj.id)
 
-    res.cookie("userId",userObj.id,{maxAge:360000,httpOnly:true})
+    // res.cookie("userId",userObj.id,{maxAge:360000,httpOnly:true})
+    res.cookie("userId", userObj.id, {
+      maxAge: 360000,
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    })
 
-    res.status(200).json({status:200,message:"Login sucessfull",data:userObj})
+    res
+      .status(200)
+      .json({ status: 200, message: "Login sucessfull", data: userObj })
   } catch (error) {
     console.log(error.message)
   }
 })
 
-authRouter.get("/user",authMiddleware,(req,res)=>{
+authRouter.get("/user", authMiddleware, (req, res) => {
   const user = req.user
-  res.status(200).json({status:200,data:{name:user.name,email:user.email}})
+  res
+    .status(200)
+    .json({ status: 200, data: { name: user.name, email: user.email } })
 })
 
 authRouter.post("/logout", (req, res) => {
   res.clearCookie("userId")
-  res.status(204).end();
-});
-
+  res.status(204).end()
+})
 
 export default authRouter
