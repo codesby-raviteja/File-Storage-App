@@ -49,8 +49,9 @@ authRouter.post("/login", async (req, res) => {
     if (!isValidUser) {
       return res.status(401).json({ error: "invalid credentials" })
     }
-    const rootDir = directoriesData.find((dir) => dir.userId === userObj.id)
-    res.cookie("userId",userObj.id,{maxAge:1000*60*60,sameSite:"none",secure:true})
+    // const rootDir = directoriesData.find((dir) => dir.userId === userObj.id)
+
+    res.cookie("userId",userObj.id,{maxAge:360000,httpOnly:true})
 
     res.status(200).json({status:200,message:"Login sucessfull",data:userObj})
   } catch (error) {

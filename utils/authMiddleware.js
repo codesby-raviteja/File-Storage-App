@@ -8,6 +8,7 @@ const authMiddleware = (req,res,next)=>{
     if(!userObj){
        return res.status(401).json({status:401,error:"Please Login to your account!"})
     }
+    console.log("HELLLO FROM AUTHMIDDLEWARE");
     req.user = userObj
     next()
 

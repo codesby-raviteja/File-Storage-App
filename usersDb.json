@@ -1,16 +1,9 @@
 [
   {
-    "id": "02d53c18-174c-429a-828f-15dfecabac0e",
-    "name": "Raviteja",
-    "password": "Raviteja",
+    "id": "ff944456-061d-41b5-9fe8-2d160d2ef73e",
+    "name": "Yellam Raviteja",
+    "password": "raviteja",
     "email": "ravi@admin.com",
-    "rootDirId": "7c79215a-ab04-4e0d-b88f-9d99f8173faa"
-  },
-  {
-    "id": "b5abad2a-5f6e-4c51-a43a-8f031c730723",
-    "name": "Sai",
-    "password": "saikrishna",
-    "email": "saikrishna@gmail.com",
-    "rootDirId": "824ac736-45ec-4721-9a68-d1e8d6797a64"
+    "rootDirId": "c8ae0ebc-9f5e-4c66-a93b-d6d6e2e13606"
   }
 ]

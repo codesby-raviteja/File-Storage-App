@@ -60,10 +60,11 @@ filesRouter.get("/file/:fileId", authMiddleware, async (req, res) => {
 })
 
 filesRouter.post(
-  "/file/upload/:parentdirid",
+  "/file/upload/:parentdirid?",
   authMiddleware,
   async (req, res) => {
     try {
+      const user = req.user
       const parentDirId = req.params.parentdirid || directoriesData[0].id
       const filename = req.headers.filename || "unnamedfile"
 
@@ -114,6 +115,7 @@ filesRouter.post(
       console.log(err.message)
       res.status(500).send("failed to upload file")
     }
+
   }
 )
 
