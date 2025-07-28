@@ -1,184 +1,201 @@
-import express from "express"
-import fs from "fs/promises"
-import path from "path"
-import { fileURLToPath } from "url"
-import filesData from "../filesDb.json" with {type:"json"}
-import directoriesData from "../directoriesDb.json" with {type:"json"}
-import authMiddleware from "../utils/authMiddleware.js"
+import express from "express";
+import fs from "fs/promises";
+import path from "path";
+import { fileURLToPath } from "url";
+import filesData from "../filesDb.json" with { type: "json" };
+import directoriesData from "../directoriesDb.json" with { type: "json" };
+import authMiddleware from "../utils/authMiddleware.js";
+import { ObjectId } from "mongodb";
 
-
-const filesRouter = express.Router()
+const filesRouter = express.Router();
 
 filesRouter.get("/file/:fileId", authMiddleware, async (req, res) => {
   try {
-    const user = req.user
+    const user = req.user;
 
-    const { fileId } = req.params
-    const { action } = req.query
+    const { fileId } = req.params;
+    const { action } = req.query;
+    const db = req.db;
     //Absolute Path of the file
-    const fileData = filesData.find((file) => file.id === fileId)
-    const parentDir = directoriesData.find(
-      (dir) => dir.id === fileData.parentDirId
-    )
-    if (user.id !== parentDir.userId) {
-      return res
-        .status(403)
-        .json({
-          status: 403,
-          error: "You don't have permission to access this file",
-        })
-    }
+
+    const fileData = await db
+      .collection("files")
+      .findOne({ _id: new ObjectId(fileId) });
+
     if (!fileData) {
-      return res.status(404).json({ message: "file does not exists" })
+      return res.status(404).json({ message: "file does not exists" });
     }
 
+    const parentDir = await db
+      .collection("directories")
+      .findOne({ _id: fileData.parentDirId });
 
+    if (user._id.toString() !== parentDir.userId.toString()) {
+      return res.status(403).json({
+        status: 403,
+        error: "You don't have permission to access this file",
+      });
+    }
 
-
-    const { extension, filename } = fileData
-      const rootPath =
+    const { extension, filename } = fileData;
+    const rootPath =
       fileURLToPath(import.meta.url + "/../../") +
-      `storage/${fileId}${extension}`
-
+      `storage/${fileId}${extension}`;
 
     if (action === "download") {
       // res.setHeader("Content-Disposition", `attachment;filename=${filename}`)
-      return res.download(rootPath,filename)
-
+      return res.download(rootPath, filename);
     }
-  
 
     res.sendFile(rootPath, (err) => {
       if (err) {
-        console.log(err.message)
+        console.log(err.message);
       }
-    })
+    });
   } catch (error) {
-    console.log(error.message)
-    res.status(501).json({ error })
+    console.log(error.message);
+    res.status(501).json({ error });
   }
-})
+});
 
 filesRouter.post(
   "/file/upload/:parentdirid?",
   authMiddleware,
   async (req, res) => {
     try {
-      const user = req.user
-      const parentDirId = req.params.parentdirid || directoriesData[0].id
-      const filename = req.headers.filename || "unnamedfile"
+      const user = req.user;
+      const parentDirId = req.params.parentdirid || user.rootDirId;
+      const db = req.db;
 
-      const directoryData = directoriesData.find(
-        (directory) => directory.id === parentDirId
-      )
+      const filename = req.headers.filename || "unnamedfile";
+
+      const directoryData = await db
+        .collection("directories")
+        .findOne({ _id: new ObjectId(parentDirId) });
 
       if (!directoryData) {
-        return res.status(404).json({ error: "Parent directory not found" })
+        return res.status(404).json({ error: "Parent directory not found" });
       }
 
-      if (directoryData.userId !== user.id) {
-        return res
-          .status(403)
-          .json({
-            status: 403,
-            error: "You don't have permission to upload to this directory !",
-          })
+      if (directoryData.userId.toString() !== user._id.toString()) {
+        return res.status(403).json({
+          status: 403,
+          error: "You don't have permission to upload to this directory !",
+        });
       }
 
-      const id = crypto.randomUUID()
-      const extension = path.extname(filename)
-      const fullFileName = id + extension
-      const fileHandle = await fs.open(`./storage/${fullFileName}`, "w+")
-      const writeStream = fileHandle.createWriteStream()
-      req.pipe(writeStream)
+      const extension = path.extname(filename);
+
+      const newFileCreated = await db.collection("files").insertOne({
+        extension,
+        filename,
+        parentDirId: new ObjectId(parentDirId),
+      });
+
+      const fullFileName = newFileCreated.insertedId.toString() + extension;
+      const fileHandle = await fs.open(`./storage/${fullFileName}`, "w+");
+      const writeStream = fileHandle.createWriteStream();
+      req.pipe(writeStream);
+
       req.on("end", async () => {
-        filesData.push({
-          id,
-          extension,
-          filename,
-          parentDirId,
-        })
-
-        const directoryData = directoriesData.find(
-          (dir) => dir.id === parentDirId
-        )
-        directoryData.files.push(id)
-        fileHandle.close()
-        await fs.writeFile("./filesDb.json", JSON.stringify(filesData))
-        await fs.writeFile(
-          "./directoriesDb.json",
-          JSON.stringify(directoriesData)
-        )
-        res.status(201).send("file uploaded successfully")
-      })
+        fileHandle.close();
+        res.status(201).send("file uploaded successfully");
+      });
     } catch (err) {
-      console.log(err.message)
-      res.status(500).send("failed to upload file")
+      console.log(err.message);
+      res.status(500).send("failed to upload file");
     }
-
   }
-)
+);
 
 filesRouter.patch("/file/:fileId", authMiddleware, async (req, res) => {
   try {
-    const user = req.user
-    const { fileId } = req.params
-    const { newFileName } = req.body
+    const user = req.user;
+    const { fileId } = req.params;
+    const { newFileName } = req.body;
+    const db = req.db;
 
-    const fileData = filesData.find((file) => file.id === fileId)
-
-    if (!fileData) return res.status(404).json({ message: "file not found!" })
-    const parentDirData = directoriesData.find(
-      (dir) => dir.id === fileData.parentDirId
-    )
-    if (!parentDirData || parentDirData.userId !== user.id) {
-      return res
-        .status(403)
-        .json({
-          status: 403,
-          error: "You don't have permission to access this file",
-        })
+    if (!newFileName.trim()) {
+      return res.status(400).json({ error: "filename cannot be empty" });
     }
 
-    fileData.filename = newFileName
-    await fs.writeFile("./filesDb.json", JSON.stringify(filesData))
-    res.json({ message: "file renamed successfully" })
+    const fileData = await db
+      .collection("files")
+      .findOne({ _id: new ObjectId(fileId) });
+
+    if (!fileData) return res.status(404).json({ message: "file not found!" });
+
+    const parentDirData = await db
+      .collection("directories")
+      .findOne({ _id: fileData.parentDirId });
+
+    if (
+      !parentDirData ||
+      parentDirData.userId.toString() !== user._id.toString()
+    ) {
+      return res.status(403).json({
+        status: 403,
+        error: "You don't have permission to access this file",
+      });
+    }
+
+    await db
+      .collection("files")
+      .updateOne(
+        { _id: new ObjectId(fileId) },
+        { $set: { filename: newFileName } }
+      );
+
+    res.json({ message: "file renamed successfully" });
   } catch (error) {
-    res.status(400).send({ message: error.message })
+    console.log(error);
+    res.status(400).send({ message: error.message });
   }
-})
+});
 
 filesRouter.delete("/file/:id", authMiddleware, async (req, res) => {
   try {
-    const user = req.user
-    const { id } = req.params
-    const fileIndex = filesData.findIndex((file) => file.id === id)
-    if (fileIndex === -1)
-      return res.status(404).json({ message: "File does not exists" })
+    const user = req.user;
+    const { id } = req.params;
+    const db = req.db;
 
-    const fileData = filesData[fileIndex]
-    const parentDir = directoriesData.find((d) => d.id === fileData.parentDirId)
-    if (!parentDir || parentDir.userId !== user.id) {
+    const fileData = await db
+      .collection("files")
+      .findOne({ _id: new ObjectId(id) });
+
+    if (!fileData)
+      return res.status(404).json({ message: "File does not exists" });
+
+    const parentDir = await db
+      .collection("directories")
+      .findOne({ _id: fileData.parentDirId });
+
+    if (!parentDir || parentDir.userId.toString() !== user._id.toString()) {
       return res
         .status(403)
-        .json({ status: 403, error: "You don't have permission to this file" })
+        .json({ status: 403, error: "You don't have permission to this file" });
     }
 
-    const fileExtension = fileData.extension
-    await fs.rm(`./storage/${id}${fileExtension}`, { recursive: true })
-    const directoryData = directoriesData.find(
-      (dir) => dir.id === filesData[fileIndex].parentDirId
-    )
-    filesData.splice(fileIndex, 1)
-    directoryData.files = directoryData.files.filter((fileId) => fileId !== id)
+    const fileExtension = fileData.extension;
 
-    await fs.writeFile("./filesDb.json", JSON.stringify(filesData))
-    await fs.writeFile("./directoriesDb.json", JSON.stringify(directoriesData))
-    res.json({ message: "file deleted successfully" })
+    await fs.rm(`./storage/${id}${fileExtension}`, { recursive: true });
+
+    await db
+      .collection("directories")
+      .updateOne(
+        { _id: fileData.parentDirId },
+        { $pull: { files: fileData._id } }
+      );
+
+    const result = await db
+      .collection("files")
+      .deleteOne({ _id: new ObjectId(id) });
+
+    res.json({ message: "file deleted successfully" });
   } catch (error) {
-    console.log(error.message)
-    res.status(501).json({ message: "failed to delete" })
+    console.log(error.message);
+    res.status(501).json({ message: "failed to delete" });
   }
-})
+});
 
-export default filesRouter
+export default filesRouter;

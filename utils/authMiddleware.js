@@ -1,20 +1,28 @@
-import usersData from "../usersDb.json" with {type:"json"}
+import { ObjectId } from "mongodb";
+const authMiddleware = async (req, res, next) => {
+  const { userId } = req.cookies;
 
-const authMiddleware = (req,res,next)=>{
-    const {userId} = req.cookies
-    const userObj = usersData.find(user => user.id===userId)
-    
- 
-    if(!userObj){
-       return res.status(401).json({status:401,error:"Please Login to your account!"})
-    }
-    console.log("HELLLO FROM AUTHMIDDLEWARE");
-    req.user = userObj
-    next()
+  if (!userId) {
+    return res
+      .status(401)
+      .json({ status: 401, error: "Please Login to your account!" });
+  }
 
-}
+  const db = req.db;
 
+  const userObj = await db
+    .collection("users")
+    .findOne({ _id: new ObjectId(userId) });
 
+  if (!userObj) {
+    return res
+      .status(401)
+      .json({ status: 401, error: "Please Login to your account!" });
+  }
 
+  req.user = userObj;
+  
+  next();
+};
 
-export default authMiddleware
+export default authMiddleware;
