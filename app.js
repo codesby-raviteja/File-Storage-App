@@ -1,3 +1,6 @@
+import { configDotenv } from "dotenv";
+configDotenv({ path: "./.env" });
+
 import express from "express";
 import cors from "cors";
 import directoryRouter from "./Routes/directoryRouter.js";
@@ -17,11 +20,6 @@ app.use(
     credentials: true,
   })
 );
-
-// app.use(cors({
-//   origin:'https://teja-drive-storage.netlify.app',
-//   credentials:true
-// }))
 
 try {
   const db = await connectDB();
