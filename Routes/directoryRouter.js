@@ -1,12 +1,13 @@
 import express from "express";
 import authMiddleware from "../utils/authMiddleware.js";
 import { ObjectId } from "mongodb";
-import { deleteFiles, deleteFolders } from "../constants.js";
+import { deleteFolders, deleteFoldersWithDollarIn } from "../constants.js";
+import fs from "fs/promises";
 
 const directoryRouter = express.Router();
 
+//Get Directory Route
 directoryRouter.get("/directory/:id?", authMiddleware, async (req, res) => {
-  //Create a storage folder add files in it
   try {
     const user = req.user;
     const directoryId = req.params.id || user.rootDirId;
@@ -51,6 +52,7 @@ directoryRouter.get("/directory/:id?", authMiddleware, async (req, res) => {
   }
 });
 
+//Create a new Directory Route
 directoryRouter.post(
   "/directory/:parentdirid?",
   authMiddleware,
@@ -105,6 +107,7 @@ directoryRouter.post(
   }
 );
 
+//Rename DirectoryName Route
 directoryRouter.patch("/directory/:id", authMiddleware, async (req, res) => {
   try {
     const user = req.user;
@@ -136,18 +139,19 @@ directoryRouter.patch("/directory/:id", authMiddleware, async (req, res) => {
   }
 });
 
+// Delete the Directory Route
 directoryRouter.delete(
-  "/directory/:dirid",
+  "/directory/:dirId",
   authMiddleware,
   async (req, res) => {
     try {
       const user = req.user;
-      const { dirid } = req.params;
+      const { dirId } = req.params;
       const db = req.db;
 
       const directoryData = await db
         .collection("directories")
-        .findOne({ _id: new ObjectId(dirid) });
+        .findOne({ _id: new ObjectId(dirId) });
 
       if (!directoryData) {
         return res.json({ message: "Directory does not exist" }).end();
@@ -165,32 +169,22 @@ directoryRouter.delete(
           .json({ message: "cannot delete root directory!" });
       }
 
-      // const allChildFolders = await db
-      //   .collection("directories")
-      //   .find({ parentDirId: new ObjectId(dirid) })
-      //   .toArray();
-      console.log(dirid);
-      await deleteFolders(dirid, db);
-      //DELETEING FOLDER's
-      // for (const folder of directoryData.folders) {
-      //   await deleteFolders(folder, db);
-      // }
+      const [allFiles, allFolders] = await deleteFoldersWithDollarIn(dirId, db);
 
-      // //DELETING FILES
-      // for (const file of directoryData.files) {
-      //   await deleteFiles(file, db);
-      // }
+      for (const { _id, extension } of allFiles) {
+        await fs.rm(`./storage/${_id.toString() + extension}`);
+      }
 
-      // await db
-      //   .collection("directories")
-      //   .updateOne(
-      //     { _id: directoryData.parentDirId },
-      //     { $pull: { folders: directoryData._id } }
-      //   );
+      const allFilesId = allFiles.map((f) => f._id);
+      const allFoldersWithCurrentDirectory = [
+        ...allFolders.map((d) => d._id),
+        new ObjectId(dirId),
+      ];
 
-      // await db
-      //   .collection("directories")
-      //   .deleteOne({ _id: new ObjectId(dirid) });
+      await db.collection("files").deleteMany({ _id: { $in: allFilesId } });
+      await db
+        .collection("directories")
+        .deleteMany({ _id: { $in: allFoldersWithCurrentDirectory } });
 
       res.json({ message: "deleted successfully" });
     } catch (error) {

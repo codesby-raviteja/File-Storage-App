@@ -2,12 +2,12 @@ import express from "express";
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
-import filesData from "../filesDb.json" with { type: "json" };
-import directoriesData from "../directoriesDb.json" with { type: "json" };
 import authMiddleware from "../utils/authMiddleware.js";
 import { ObjectId } from "mongodb";
 
 const filesRouter = express.Router();
+
+//Get File Route
 
 filesRouter.get("/file/:fileId", authMiddleware, async (req, res) => {
   try {
@@ -58,6 +58,7 @@ filesRouter.get("/file/:fileId", authMiddleware, async (req, res) => {
   }
 });
 
+//Upload File Route
 filesRouter.post(
   "/file/upload/:parentdirid?",
   authMiddleware,
@@ -99,7 +100,13 @@ filesRouter.post(
 
       req.on("end", async () => {
         fileHandle.close();
-        res.status(201).send("file uploaded successfully");
+        res.status(201).json({ message: "file uploaded successfully" });
+      });
+      req.on("error", async () => {
+        await db
+          .collection("files")
+          .deleteOne({ _id: newFileCreated.insertedId });
+        res.status(404).json({ error: "could not upload file" });
       });
     } catch (err) {
       console.log(err.message);
@@ -108,6 +115,7 @@ filesRouter.post(
   }
 );
 
+//Rename File Route
 filesRouter.patch("/file/:fileId", authMiddleware, async (req, res) => {
   try {
     const user = req.user;
@@ -153,6 +161,7 @@ filesRouter.patch("/file/:fileId", authMiddleware, async (req, res) => {
   }
 });
 
+//Delete File Route
 filesRouter.delete("/file/:id", authMiddleware, async (req, res) => {
   try {
     const user = req.user;
@@ -178,14 +187,7 @@ filesRouter.delete("/file/:id", authMiddleware, async (req, res) => {
 
     const fileExtension = fileData.extension;
 
-    await fs.rm(`./storage/${id}${fileExtension}`, { recursive: true });
-
-    await db
-      .collection("directories")
-      .updateOne(
-        { _id: fileData.parentDirId },
-        { $pull: { files: fileData._id } }
-      );
+    await fs.rm(`./storage/${id}${fileExtension}`);
 
     const result = await db
       .collection("files")
